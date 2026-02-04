@@ -11,9 +11,9 @@ public partial class ExperienciaLaboral
 
     public string Empresa { get; set; } = null!;
 
-    public DateOnly FechaInicio { get; set; }
+    public string FechaInicio { get; set; }
 
-    public DateOnly? FechaFin { get; set; }
+    public string FechaFin { get; set; }
 
     public string Lugar { get; set; } = null!;
 

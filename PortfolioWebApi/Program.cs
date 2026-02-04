@@ -110,7 +110,7 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseHttpsRedirection();
-
+app.UseCors("AllowRender");
 app.UseAuthentication();
 app.UseAuthorization();
 
