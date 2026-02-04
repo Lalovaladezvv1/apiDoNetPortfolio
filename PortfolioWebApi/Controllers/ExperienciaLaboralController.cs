@@ -113,9 +113,6 @@ namespace PortfolioWebApi.Controllers
 
         [Authorize]
         [HttpPut("{id}")]
-
-        [Authorize]
-        [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, ExperienciaLaboralUpdateDto dto)
         {
             try
