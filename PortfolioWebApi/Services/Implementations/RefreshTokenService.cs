@@ -1,41 +1,49 @@
-using StackExchange.Redis;
-using System.Text.Json;
+using System.Net.Http.Headers;
 
 public class RefreshTokenService : IRefreshTokenService
 {
-    private readonly IDatabase _redis;
+    private readonly HttpClient _http;
+    private readonly string _url;
 
-    public RefreshTokenService(IConnectionMultiplexer redis)
+    public RefreshTokenService(HttpClient http, IConfiguration config)
     {
-        _redis = redis.GetDatabase();
+        _http = http;
+        _url = config["REDIS_REST_URL"]!;
+
+        _http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue(
+                "Bearer",
+                config["REDIS_REST_TOKEN"]!
+            );
     }
 
-    public async Task SaveAsync(string token, int userId)
+    public async Task SaveAsync(string refreshToken, int userId)
     {
-        var data = JsonSerializer.Serialize(new
-        {
-            userId,
-            createdAt = DateTime.UtcNow
-        });
-
-        await _redis.StringSetAsync(
-            $"refresh:{token}",
-            data,
-            TimeSpan.FromDays(7)
+        var response = await _http.PostAsync(
+            $"{_url}/set/{refreshToken}/{userId}?ex=604800",
+            null
         );
+
+        response.EnsureSuccessStatusCode();
     }
 
-    public async Task<int?> ValidateAsync(string token)
+    public async Task<int?> ValidateAsync(string refreshToken)
     {
-        var value = await _redis.StringGetAsync($"refresh:{token}");
-        if (value.IsNullOrEmpty) return null;
+        var response = await _http.GetAsync($"{_url}/get/{refreshToken}");
 
-        var json = JsonSerializer.Deserialize<JsonElement>(value);
-        return json.GetProperty("userId").GetInt32();
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        var value = await response.Content.ReadAsStringAsync();
+
+        if (value == "null")
+            return null;
+
+        return int.Parse(value);
     }
 
-    public async Task RevokeAsync(string token)
+    public async Task RevokeAsync(string refreshToken)
     {
-        await _redis.KeyDeleteAsync($"refresh:{token}");
+        await _http.PostAsync($"{_url}/del/{refreshToken}", null);
     }
 }
