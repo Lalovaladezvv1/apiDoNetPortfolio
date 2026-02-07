@@ -101,15 +101,20 @@ builder.Services.AddVersionedApiExplorer(options =>
     options.SubstituteApiVersionInUrl = true;
 });
 
-builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
-    ConnectionMultiplexer.Connect(
-        builder.Configuration["REDIS_URL"],
-        options =>
-        {
-            options.Ssl = true;
-        }
-    )
-);
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    var options = ConfigurationOptions.Parse(
+        builder.Configuration["REDIS_URL"]!,
+        true
+    );
+
+    options.AbortOnConnectFail = false; 
+    options.Ssl = true;
+    options.ConnectRetry = 5;
+    options.ConnectTimeout = 10000;
+
+    return ConnectionMultiplexer.Connect(options);
+});
 
 
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
