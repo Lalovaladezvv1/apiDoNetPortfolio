@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Text.Json;
 
 public class RefreshTokenService : IRefreshTokenService
 {
@@ -19,8 +20,10 @@ public class RefreshTokenService : IRefreshTokenService
 
     public async Task SaveAsync(string refreshToken, int userId)
     {
+        var key = Uri.EscapeDataString(refreshToken);
+
         var response = await _http.PostAsync(
-            $"{_url}/set/{refreshToken}/{userId}?ex=604800",
+            $"{_url}/set/{key}/{userId}?ex=604800",
             null
         );
 
@@ -29,21 +32,28 @@ public class RefreshTokenService : IRefreshTokenService
 
     public async Task<int?> ValidateAsync(string refreshToken)
     {
-        var response = await _http.GetAsync($"{_url}/get/{refreshToken}");
+        var key = Uri.EscapeDataString(refreshToken);
 
+        var response = await _http.GetAsync($"{_url}/get/{key}");
         if (!response.IsSuccessStatusCode)
             return null;
 
-        var value = await response.Content.ReadAsStringAsync();
+        var jsonString = await response.Content.ReadAsStringAsync();
 
-        if (value == "null")
+        var json = JsonSerializer.Deserialize<JsonElement>(jsonString);
+
+        if (!json.TryGetProperty("result", out var result))
             return null;
 
-        return int.Parse(value);
+        if (result.ValueKind == JsonValueKind.Null)
+            return null;
+
+        return int.Parse(result.GetString()!);
     }
 
     public async Task RevokeAsync(string refreshToken)
     {
-        await _http.PostAsync($"{_url}/del/{refreshToken}", null);
+        var key = Uri.EscapeDataString(refreshToken);
+        await _http.PostAsync($"{_url}/del/{key}", null);
     }
 }
