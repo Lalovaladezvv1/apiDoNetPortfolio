@@ -6,6 +6,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using PortfolioWebApi.Filters;
+using StackExchange.Redis;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,9 +18,10 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowRender", policy =>
     {
         policy
-            .WithOrigins(allowedOrigin)
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+    .WithOrigins(allowedOrigin)
+    .AllowAnyHeader()
+    .AllowAnyMethod()
+    .AllowCredentials();
     });
 });
 
@@ -98,6 +100,20 @@ builder.Services.AddVersionedApiExplorer(options =>
     options.GroupNameFormat = "'v'VVV";
     options.SubstituteApiVersionInUrl = true;
 });
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+    ConnectionMultiplexer.Connect(
+        builder.Configuration["REDIS_URL"],
+        options =>
+        {
+            options.Ssl = true;
+        }
+    )
+);
+
+
+builder.Services.AddScoped<IRefreshTokenService>();
+
 
 var app = builder.Build();
 
