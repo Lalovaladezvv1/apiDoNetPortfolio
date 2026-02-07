@@ -14,15 +14,15 @@ var allowedOrigin = builder.Configuration["Cors:AllowedOrigin"];
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowRender", policy =>
+    options.AddPolicy("PublicApi", policy =>
     {
         policy
-    .WithOrigins(allowedOrigin)
-    .AllowAnyHeader()
-    .AllowAnyMethod()
-    .AllowCredentials();
+            .AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
+
 
 builder.Services.AddDbContext<FreeSqlDb2016559Context>(options =>
     options.UseSqlServer(
@@ -113,7 +113,7 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseHttpsRedirection();
-app.UseCors("AllowRender");
+app.UseCors("PublicApi");
 app.UseAuthentication();
 app.UseAuthorization();
 
