@@ -112,7 +112,8 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 );
 
 
-builder.Services.AddScoped<IRefreshTokenService>();
+builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+
 
 
 var app = builder.Build();
